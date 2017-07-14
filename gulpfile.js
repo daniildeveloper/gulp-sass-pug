@@ -8,7 +8,7 @@ var sourcemaps = require("gulp-sourcemaps");
 var mincss = require("gulp-minify-css");
 var concat = require('gulp-concat');
 var browserSync = require('browser-sync');
-var reload = browserSync.reload();
+var reload = browserSync.reload;
 
 gulp.task('default', ['images-to-dist', 'fonts-prepare', "bootstrap-prepare", 'sass-prebuild'], function () {
     browserSync.init({
@@ -116,12 +116,12 @@ gulp.task("fonts-prepare", function () {
 });
 
 gulp.task("bootstrap-prepare", function () {
-    gulp.src("vendors/bootstrap/dist/css/bootstrap.min.css")
+    gulp.src("node_modules/bootstrap/dist/css/bootstrap.min.css")
         .pipe(gulp.dest("./dist/css"));
-    gulp.src("vendors/bootstrap/dist/js/bootstrap.min.js")
+    gulp.src("node_modules/bootstrap/dist/js/bootstrap.min.js")
         .pipe(gulp.dest("./dist/js"));
-    gulp.src("./vendors/jquery/dist/jquery.min.js").pipe(gulp.dest("./dist/js"));
-    gulp.src("./vendors/tether/dist/css/tether.min.css").pipe(gulp.dest("./dist/css"));
-    gulp.src("./vendors/tether/dist/js/tether.min.js")
+    gulp.src("./node_modules/jquery/dist/jquery.min.js").pipe(gulp.dest("./dist/js"));
+    gulp.src("./node_modules/tether/dist/css/tether.min.css").pipe(gulp.dest("./dist/css"));
+    gulp.src("./node_modules/tether/dist/js/tether.min.js")
         .pipe(gulp.dest("./dist/js"))
 });

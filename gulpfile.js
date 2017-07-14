@@ -37,16 +37,15 @@ gulp.task('default', ['images-to-dist', 'fonts-prepare', "bootstrap-prepare", 'l
     });
 
     //watch for less files
-    watch("./src/less/**/*.less", function () {
-        console.log("less changed")
-        return gulp.src("./src/less/main.less")
+    watch("./src/scss/**/*.scss", function () {
+        console.log("scss changed")
+        return gulp.src("./src/scss/scss.less")
             .pipe(sourcemaps.init())
-            .pipe(less())
+            .pipe(sass({
+                outputStyle: 'compressed'
+            }).on('error', sass.logError))
             .pipe(sourcemaps.write())
-            .pipe(mincss())
-            // .pipe(concat("style.css"))
-            .pipe(gulp.dest("./dist/css/"))
-        // .pipe(reload());
+            .pipe(gulp.dest("./dist/css/"));
     });
 
     watch('./src/pug/**/*.pug', function () {
@@ -105,6 +104,7 @@ gulp.task('less-prebuild', function () {
         .pipe(gulp.dest("./dist/css"));
 })
 
+// prepare fonts for process
 gulp.task("fonts-prepare", function () {
     gulp.src("./node_modules/bootstrap/fonts/**/*")
         .pipe(gulp.dest("./dist/fonts/"));
@@ -116,10 +116,6 @@ gulp.task("fonts-prepare", function () {
         .pipe(gulp.dest('./dist/css/'));
 });
 
-gulp.task("normalize", function () {
-    gulp.src("./src/css/normalize.css")
-        .pipe(gulp.dest("./dist/css"));
-});
 gulp.task("bootstrap-prepare", function () {
     gulp.src("vendors/bootstrap/dist/css/bootstrap.min.css")
         .pipe(gulp.dest("./dist/css"));
@@ -129,10 +125,4 @@ gulp.task("bootstrap-prepare", function () {
     gulp.src("./vendors/tether/dist/css/tether.min.css").pipe(gulp.dest("./dist/css"));
     gulp.src("./vendors/tether/dist/js/tether.min.js")
         .pipe(gulp.dest("./dist/js"))
-
-});
-
-gulp.task("css", function () {
-    gulp.src("./node_modules/bootstrap/dist/css/bootstrap.min.css")
-        .pipe(gulp.dest('./dist/css/'));
 });

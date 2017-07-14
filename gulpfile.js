@@ -2,14 +2,15 @@ var gulp = require('gulp');
 var pug = require('gulp-pug');
 var sass = require('gulp-sass');
 var cleancss = require('gulp-clean-css');
-var browserify = require('browserify');
 var watch = require('gulp-watch');
 var path = require('path');
 var sourcemaps = require("gulp-sourcemaps");
 var mincss = require("gulp-minify-css");
 var concat = require('gulp-concat');
+var browserSync = require('browser-sync');
+var reload = browserSync.reload();
 
-gulp.task('default', ['images-to-dist', 'fonts-prepare', "bootstrap-prepare", 'less-prebuild', 'js-prepare'], function () {
+gulp.task('default', ['images-to-dist', 'fonts-prepare', "bootstrap-prepare", 'sass-prebuild'], function () {
     browserSync.init({
         server: {
             baseDir: "./dist"
@@ -92,16 +93,14 @@ gulp.task("images-to-dist", function () {
 });
 
 //prepare less files for development enviroment
-gulp.task('less-prebuild', function () {
-    gulp.src("./src/less/**/*.less")
+gulp.task('sass-prebuild', function () {
+    gulp.src("./src/scss/scss.less")
         .pipe(sourcemaps.init())
-        .pipe(less({
-            paths: [path.join(__dirname, 'less', 'includes')]
-        }))
+        .pipe(sass({
+            outputStyle: 'compressed'
+        }).on('error', sass.logError))
         .pipe(sourcemaps.write())
-        .pipe(mincss())
-        .pipe(concat("style.css"))
-        .pipe(gulp.dest("./dist/css"));
+        .pipe(gulp.dest("./dist/css/"));
 })
 
 // prepare fonts for process

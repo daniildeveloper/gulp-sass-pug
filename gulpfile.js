@@ -1,127 +1,134 @@
-var gulp = require('gulp');
-var pug = require('gulp-pug');
-var sass = require('gulp-sass');
-var cleancss = require('gulp-clean-css');
-var watch = require('gulp-watch');
-var path = require('path');
-var sourcemaps = require("gulp-sourcemaps");
-var mincss = require("gulp-minify-css");
-var concat = require('gulp-concat');
-var browserSync = require('browser-sync');
-var reload = browserSync.reload;
+var gulp = require('gulp'),
+    sync = require('browser-sync'),
+    concat = require('gulp-concat'),
+    sass = require('gulp-sass'),
+    mincss = require('gulp-minify-css'),
+    watch = require('gulp-watch'),
+    pug = require('gulp-pug'),
+    notify = require('gulp-notify'),
+    babel = require('gulp-babel'),
+    reload = sync.reload;
 
-gulp.task('default', ['images-to-dist', 'fonts-prepare', "bootstrap-prepare", 'sass-prebuild'], function () {
-    browserSync.init({
+/**
+ * run gulp watch dev server
+ */
+gulp.task('default', ['framework-prepare', 'scss', 'pug', 'img', 'fonts', 'js', 'js_vendor', 'css_vendor'], function () {
+    sync.init({
         server: {
-            baseDir: "./dist"
+            baseDir: './dist'
         }
     });
-    //watch to changing of html files
-    watch("./src/html/*.html", function () {
-        console.log("html changed");
-        gulp.src("./src/html/*.html")
-            .pipe(gulp.dest('./dist'));
-        reload();
-    });
-    watch("./src/img/*", function () {
-        console.log("image changed");
-        return gulp.src("./src/img/*")
-            .pipe(gulp.dest("./dist/img"));
-        reload();
-    });
+    gulp.watch('./src/scss/**/*.scss', ['scss']);
+    gulp.watch('./src/pug/**/*.pug', ['pug']);
+    gulp.watch('./src/img/**/*.{svg, jpg, png, gif, jpeg}', ['img']);
+    gulp.watch('./src/js/app.js', ['js']);
+});
 
-    //reload if dist file is changed
-    gulp.watch("./dist/css/main.css").on("change", reload);
-    gulp.watch('./dist/*.html').on("change", function () {
-        console.log('html changed');
-        reload();
-    });
+/**
+ * pug compilation task
+ */
+gulp.task('pug', function () {
+    gulp.src('./src/pug/**/*.pug')
+        .pipe(pug({
+            pretty: true
+        }))
+        .on('error', notify.onError(function (err) {
+            return "Pug: " + err;
+        }))
+        .pipe(gulp.dest('./dist/'))
+        .pipe(reload({
+            stream: true
+        }))
+});
 
-    //watch for less files
-    watch("./src/scss/**/*.scss", function () {
-        console.log("scss changed")
-        return gulp.src("./src/scss/scss.less")
-            .pipe(sourcemaps.init())
-            .pipe(sass({
-                outputStyle: 'compressed'
-            }).on('error', sass.logError))
-            .pipe(sourcemaps.write())
-            .pipe(gulp.dest("./dist/css/"));
-    });
+/**
+ * less compilation task
+ */
+gulp.task('scss', function () {
+    gulp.src('./src/scss/main.scss')
+        .pipe(sass())
+        .on('error', notify.onError(function (err) {
+            return 'Scss: ' + err;
+        }))
+        .pipe(mincss())
+        .pipe(gulp.dest('./dist/css'))
+        .pipe(reload({
+            stream: true
+        }))
+});
 
-    watch('./src/pug/**/*.pug', function () {
-        console.log('pug changed');
-        return gulp.src('./src/pug/**/*.pug')
-            .pipe(pug())
-            .pipe(gulp.dest('./dist/'))
-            .pipe(reload({
-                stream: true
-            }));
-    });
-
-    //watch images change
-    watch('./src/img/**/*.{svg, jpg, png, gif}', function () {
-        console.log('image changed');
-        gulp.src('./src/img/**/*')
-            .pipe(gulp.dest('./dist/img/'));
-    })
+/**
+ * Copy all bootstrap and\or other framework or grid files to dist
+ */
+gulp.task('framework-prepare', function () {
+    gulp.src(('node_modules/font-awesome/fonts/**/*'))
+        .pipe(gulp.dest('./dist/fonts'));
+    gulp.src('')
 });
 
 
 /**
- * ===============================
- * demo gulp tasks
- * ===============================
+ * compile js or other to readeable in all browsers js
  */
-/**
- * sass
- */
-gulp.task('sass', function () {
-    return gulp.src('./sass/**/*.scss')
-        .pipe(sass().on('error', sass.logError))
-        .pipe(gulp.dest('./css'));
+gulp.task('js', function () {
+    // todo: listen js
+    gulp.src('./src/js/app.js')
+        .pipe(babel())
+        .on('error', notify.onError(function (err) {
+            return "Js: " + err;
+        }))
+        .pipe(gulp.dest('./dist/js'))
+        .pipe(reload({
+            stream: true
+        }))
 });
 
-gulp.task('sass:watch', function () {
-    gulp.watch('./sass/**/*.scss', ['sass']);
+gulp.task('js_vendor', function () {
+    let vendorArrays = [
+        './node_modules/jquery/dist/jquery.min.js',
+        './node_modules/popper.js/dist/umd/popper.min.js',
+        './node_modules/bootstrap/dist/js/bootstrap.min.js',
+    ];
+
+    vendorArrays.push('./node_modules/hotkeys-js/dist/hotkeys.min.js');
+
+    gulp.src(vendorArrays).pipe(concat('vendor.js'))
+        .pipe(gulp.dest('./dist/js/'));
 });
 
-//all images from sources to production
-gulp.task("images-to-dist", function () {
-    gulp.src("./src/img/**/*")
-        .pipe(gulp.dest("./dist/img/"));
-});
-
-//prepare less files for development enviroment
-gulp.task('sass-prebuild', function () {
-    gulp.src("./src/scss/scss.less")
-        .pipe(sourcemaps.init())
-        .pipe(sass({
-            outputStyle: 'compressed'
-        }).on('error', sass.logError))
-        .pipe(sourcemaps.write())
-        .pipe(gulp.dest("./dist/css/"));
+gulp.task('css_vendor', function () {
+    gulp.src([
+            './node_modules/bootstrap/dist/css/bootstrap.min.css',
+            './node_modules/font-awesome/css/font-awesome.min.css',
+            './node_modules/animate.css/animate.min.css',
+        ])
+        .pipe(concat('vendor.css'))
+        .pipe(mincss())
+        .pipe(gulp.dest('./dist/css/'));
 })
 
-// prepare fonts for process
-gulp.task("fonts-prepare", function () {
-    gulp.src("./node_modules/bootstrap/fonts/**/*")
-        .pipe(gulp.dest("./dist/fonts/"));
-    gulp.src("./src/fonts/**/*")
-        .pipe(gulp.dest("./dist/fonts/"));
-    gulp.src('./node_modules/font-awesome/fonts/**/*')
-        .pipe(gulp.dest('./dist/fonts/'));
-    gulp.src('./node_modules/font-awesome/css/font-awesome.min.css')
-        .pipe(gulp.dest('./dist/css/'));
+/**
+ * images
+ */
+gulp.task('img', function () {
+    gulp.src('./src/img/**/*')
+        .pipe(gulp.dest('./dist/img'));
 });
 
-gulp.task("bootstrap-prepare", function () {
-    gulp.src("node_modules/bootstrap/dist/css/bootstrap.min.css")
-        .pipe(gulp.dest("./dist/css"));
-    gulp.src("node_modules/bootstrap/dist/js/bootstrap.min.js")
-        .pipe(gulp.dest("./dist/js"));
-    gulp.src("./node_modules/jquery/dist/jquery.min.js").pipe(gulp.dest("./dist/js"));
-    gulp.src("./node_modules/tether/dist/css/tether.min.css").pipe(gulp.dest("./dist/css"));
-    gulp.src("./node_modules/tether/dist/js/tether.min.js")
-        .pipe(gulp.dest("./dist/js"))
+/**
+ * copy fonts to dist folder
+ */
+gulp.task('fonts', function () {
+    gulp.src('./src/fonts/**/*')
+        .pipe(gulp.dest('./dist/fonts'));
 });
+
+/**
+ * html changes watching task
+ */
+gulp.task('html', function () {
+    gulp.src('./dist/**/*.html')
+        .pipe(reload({
+            stream: true
+        }))
+})
